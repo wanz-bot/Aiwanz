@@ -140,11 +140,12 @@ const htmlUI = `
   }
 
   .topbar {
-    background: #f5f5f5;
-    padding: 15px 20px;
+    background: #ffffff;
+    padding: 18px 25px;
     border-bottom: 1px solid #ddd;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
+    text-align: left;
   }
 
   .container {
@@ -168,17 +169,18 @@ const htmlUI = `
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 15px;
+    box-sizing: border-box;
   }
 
   button {
-    background: #3478f6;
+    background: #0068ff;
     color: white;
     border: none;
     cursor: pointer;
   }
 
   button:hover {
-    background: #2c67cf;
+    background: #0052cb;
   }
 
   .chat-box {
@@ -190,15 +192,24 @@ const htmlUI = `
     background: #fafafa;
   }
 
-  .typing {
+  .typing-anim {
+    display: inline-block;
     border-right: 2px solid #333;
-    animation: cursor 0.6s infinite;
+    padding-right: 3px;
+    animation: blink 0.7s infinite;
   }
 
-  @keyframes cursor {
+  @keyframes blink {
     0% { border-color: #333; }
     50% { border-color: transparent; }
     100% { border-color: #333; }
+  }
+
+  pre {
+    background: #f7f7f7;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
   }
 </style>
 </head>
@@ -221,7 +232,7 @@ const htmlUI = `
 <div id="dashboard" class="card" style="display:none;">
   <h3>Dashboard</h3>
   <p><b>Email:</b> <span id="dbEmail"></span></p>
-  <p><b>API Key:</b> <span id="dbApiKey"></span></p>
+  <p><b>API Key:</b> <code id="dbApiKey"></code></p>
   <p><b>Limit Harian:</b> <span id="dbLimitMax"></span></p>
   <p><b>Sudah Dipakai:</b> <span id="dbLimitUsed"></span></p>
   <p><b>Reset Pada:</b> <span id="dbLimitReset"></span></p>
@@ -270,18 +281,18 @@ const htmlUI = `
 let apiKey = null;
 
 function appendMessage(text, sender) {
-  const div = document.getElementById("chatBox");
-  div.innerHTML += "<p><b>"+sender+":</b> "+text+"</p>";
-  div.scrollTop = div.scrollHeight;
+  const box = document.getElementById("chatBox");
+  box.innerHTML += "<p><b>"+sender+":</b> "+text+"</p>";
+  box.scrollTop = box.scrollHeight;
 }
 
 async function register() {
   let email = document.getElementById("email").value;
-  let pass = document.getElementById("password").value;
+  let password = document.getElementById("password").value;
 
   let res = await fetch("/api/register", {
     method:"POST",
-    body: JSON.stringify({email,password:pass})
+    body: JSON.stringify({ email, password })
   });
 
   let data = await res.json();
@@ -291,22 +302,21 @@ async function register() {
 
 async function login() {
   let email = document.getElementById("email").value;
-  let pass = document.getElementById("password").value;
+  let password = document.getElementById("password").value;
 
   let res = await fetch("/api/login", {
     method:"POST",
-    body: JSON.stringify({email,password:pass})
+    body: JSON.stringify({ email, password })
   });
 
   let data = await res.json();
+
   if(data.error) return alert(data.error);
 
   apiKey = data.apiKey;
 
-  // sembunyikan login box
   document.getElementById("authBox").style.display = "none";
 
-  // tampilkan dashboard
   await loadDashboard();
 
   document.getElementById("dashboard").style.display = "block";
@@ -334,24 +344,30 @@ async function sendChat() {
   let msg = document.getElementById("msg").value;
   let model = document.getElementById("model").value;
 
+  if (!msg.trim()) return;
+
   appendMessage(msg, "Kamu");
 
+  const box = document.getElementById("chatBox");
   const typing = document.createElement("p");
-  typing.innerHTML = "<i>AI sedang mengetik<span class='typing'>...</span></i>";
-  document.getElementById("chatBox").appendChild(typing);
+  typing.innerHTML = "<i>AI sedang mengetik <span class='typing-anim'>...</span></i>";
+  box.appendChild(typing);
 
   let res = await fetch("/api/chat", {
     method:"POST",
     headers: { "x-api-key": apiKey },
-    body: JSON.stringify({message: msg, model})
+    body: JSON.stringify({ message: msg, model })
   });
 
   let data = await res.json();
 
   typing.remove();
+
   appendMessage(data.response, "AI");
 
-  loadDashboard(); // update limit
+  document.getElementById("msg").value = "";
+
+  loadDashboard();
 }
 </script>
 
