@@ -2,363 +2,314 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // ============
-    // UI
-    // ============
     if (url.pathname === "/") {
-      return new Response(getUI(), {
-        headers: { "Content-Type": "text/html" },
-      });
+      return new Response(UI, { headers: { "Content-Type": "text/html" } });
     }
 
-    // ============
-    // TEXT CHAT
-    // ============
-    if (url.pathname === "/api/chat" && request.method === "POST") {
+    // CHAT
+    if (url.pathname === "/api/chat") {
       const { prompt, model } = await request.json();
 
       const ai = await env.AI.run(model, {
         messages: [{ role: "user", content: prompt }],
       });
 
-      let reply = ai.response || ai?.messages?.[0]?.content || "Tidak ada output.";
-
-      return new Response(JSON.stringify({ reply }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json({ reply: ai.response });
     }
 
-    // ============
     // ANALISIS GAMBAR
-    // ============
-    if (url.pathname === "/api/vision" && request.method === "POST") {
+    if (url.pathname === "/api/vision") {
       const body = await request.formData();
       const file = body.get("file");
-
       const bytes = await file.arrayBuffer();
 
       const ai = await env.AI.run("@cf/mistral/mistral-embed-image", {
         image: [...new Uint8Array(bytes)],
       });
 
-      return new Response(JSON.stringify({ result: ai }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json({ result: ai });
     }
 
-    // ============
-    // ANALISIS FILE (PDF, TXT, JSON, DOCX, dll)
-    // ============
-    if (url.pathname === "/api/analyze-file" && request.method === "POST") {
+    // ANALISIS FILE
+    if (url.pathname === "/api/analyze-file") {
       const body = await request.formData();
       const file = body.get("file");
-
       const text = await file.text();
 
-      const ai = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+      const ai = await env.AI.run("@cf/meta/llama-3.1-70b-instruct", {
         messages: [
-          { role: "system", content: "Analisis isi file berikut secara detail." },
-          { role: "user", content: text },
-        ],
+          { role: "system", content: "Analisis mendalam isi file:" },
+          { role: "user", content: text }
+        ]
       });
 
-      const reply = ai.response || "Tidak bisa membaca file.";
-
-      return new Response(JSON.stringify({ reply }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return Response.json({ reply: ai.response });
     }
 
-    // ============
-    // TEXT → IMAGE
-    // ============
-    if (url.pathname === "/api/generate-image" && request.method === "POST") {
+    // IMAGE GENERATOR
+    if (url.pathname === "/api/generate-image") {
       const { prompt } = await request.json();
 
-      const img = await env.AI.run("@cf/stabilityai/stable-diffusion-xl-base-1.0", {
-        prompt,
-      });
+      const image = await env.AI.run(
+        "@cf/stabilityai/stable-diffusion-xl-base-1.0",
+        { prompt }
+      );
 
-      return new Response(img, {
-        headers: { "Content-Type": "image/png" },
-      });
+      return new Response(image, { headers: { "Content-Type": "image/png" } });
     }
 
     return new Response("Not Found", { status: 404 });
-  },
+  }
 };
 
-function getUI() {
-  return `
+// =============================
+// MODERN UI — WANZ AI
+// =============================
+const UI = `
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
-<title>Wanz Multi-AI</title>
+<meta charset="UTF-8">
+
+<title>Wanz AI</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #f7f7f7;
-    font-family: Inter, Arial;
-  }
+body {
+  margin:0;
+  background:#fafafa;
+  font-family: "Segoe UI", Arial;
+  display:flex;
+  height:100vh;
+}
 
-  .nav {
-    background: white;
-    padding: 20px;
-    display: flex;
-    gap: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.05);
-    position: sticky;
-    top: 0;
-    z-index: 99;
-  }
+/* SIDEBAR */
+.sidebar {
+  width:260px;
+  background:#ffffff;
+  border-right:1px solid #e5e5e5;
+  padding:20px;
+}
 
-  .nav button {
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: none;
-    background: #eaeaea;
-    cursor: pointer;
-  }
+.logo {
+  font-size:22px;
+  font-weight:700;
+  margin-bottom:25px;
+}
 
-  .nav button.active {
-    background: black;
-    color: white;
-  }
+.menu button {
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border-radius:10px;
+  border:none;
+  background:#f1f1f1;
+  cursor:pointer;
+  font-size:15px;
+}
 
-  .page {
-    display: none;
-    padding: 20px;
-    max-width: 900px;
-    margin: auto;
-  }
+.menu button.active {
+  background:#000;
+  color:#fff;
+}
 
-  .page.active {
-    display: block;
-  }
+.main {
+  flex:1;
+  padding:20px;
+  overflow:auto;
+}
 
-  #chatBox {
-    height: 70vh;
-    overflow-y: auto;
-    padding: 20px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.1);
-  }
+/* CHAT UI */
+#chatBox {
+  background:#fff;
+  height:70vh;
+  padding:15px;
+  border-radius:12px;
+  overflow-y:auto;
+  box-shadow:0 0 10px rgba(0,0,0,0.06);
+}
 
-  .bubble {
-    margin-bottom: 15px;
-    padding: 12px 16px;
-    border-radius: 10px;
-    max-width: 80%;
-    line-height: 1.6;
-  }
+.bubble {
+  padding:12px 15px;
+  margin:10px 0;
+  border-radius:10px;
+  max-width:80%;
+  line-height:1.5;
+}
 
-  .me { background: #dff1ff; }
-  .ai { background: #f0f0f0; }
+.me { background:#dff1ff; align-self:flex-end }
+.ai { background:#eeeeee }
 
-  .input-area {
-    margin-top: 15px;
-    display: flex;
-    gap: 10px;
-  }
+/* TYPING ANIMATION */
+.typing {
+  display:inline-block;
+  width:60px;
+  height:14px;
+  background:url('https://i.imgur.com/6RMhx.gif');
+  background-size:contain;
+}
 
-  input, textarea {
-    flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-  }
+/* FORMS */
+input, textarea {
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:1px solid #ccc;
+  margin-top:10px;
+  font-size:15px;
+}
 
-  button {
-    padding: 12px 18px;
-    border-radius: 8px;
-    background: black;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-
-  .loader {
-    text-align: center;
-    padding: 20px;
-    color: #666;
-    font-style: italic;
-    animation: blink 1s infinite;
-  }
-
-  @keyframes blink {
-    0% { opacity: .4; }
-    50% { opacity: 1; }
-    100% { opacity: .4; }
-  }
-
-  .img-output {
-    text-align: center;
-    margin-top: 20px;
-  }
+button.send {
+  padding:12px 18px;
+  margin-top:10px;
+  background:#000;
+  color:#fff;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
 </style>
-
 </head>
+
 <body>
 
-<!-- NAV -->
-<div class="nav">
-  <button onclick="showPage('chat')" class="active">Chat AI</button>
-  <button onclick="showPage('vision')">Analisis Gambar</button>
-  <button onclick="showPage('file')">Analisis File</button>
-  <button onclick="showPage('imagegen')">Buat Gambar</button>
-</div>
+<div class="sidebar">
+  <div class="logo">⚡ Wanz AI</div>
 
-<!-- CHAT -->
-<div id="chat" class="page active">
-  <h2>Chat AI</h2>
-
-  <select id="model">
-    <option value="@cf/meta/llama-3.1-8b-instruct">LLaMA 8B</option>
-    <option value="@cf/meta/llama-3.1-70b-instruct">LLaMA 70B</option>
-    <option value="@cf/qwen/qwen2.5-7b-instruct">Qwen 7B</option>
-  </select>
-
-  <div id="chatBox"></div>
-
-  <div class="input-area">
-    <input id="prompt" placeholder="Tulis pesan..." />
-    <button onclick="sendChat()">Kirim</button>
+  <div class="menu">
+    <button class="active" onclick="showPage('chat')">Chat AI</button>
+    <button onclick="showPage('vision')">Analisis Gambar</button>
+    <button onclick="showPage('file')">Analisis File</button>
+    <button onclick="showPage('imagegen')">Buat Gambar</button>
   </div>
 </div>
 
-<!-- VISION -->
-<div id="vision" class="page">
-  <h2>Analisis Gambar</h2>
+<div class="main">
 
-  <input type="file" id="visionFile" accept="image/*">
-  <button onclick="analyzeImage()">Analisis</button>
+  <!-- CHAT -->
+  <div id="chat" class="page active">
+    <h2>Chat AI</h2>
+    <select id="model">
+      <option value="@cf/meta/llama-3.1-8b-instruct">LLaMA 8B</option>
+      <option value="@cf/meta/llama-3.1-70b-instruct">LLaMA 70B</option>
+    </select>
 
-  <div id="visionResult"></div>
+    <div id="chatBox"></div>
+
+    <input id="prompt" placeholder="Tulis pesan...">
+    <button class="send" onclick="sendChat()">Kirim</button>
+  </div>
+
+  <!-- VISION -->
+  <div id="vision" class="page" style="display:none">
+    <h2>Analisis Gambar</h2>
+    <input type="file" id="visionFile" accept="image/*">
+    <button class="send" onclick="analyzeImage()">Analisis</button>
+    <div id="visionResult"></div>
+  </div>
+
+  <!-- FILE -->
+  <div id="file" class="page" style="display:none">
+    <h2>Analisis File</h2>
+    <input type="file" id="uploadFile">
+    <button class="send" onclick="analyzeFile()">Analisis</button>
+    <div id="fileResult"></div>
+  </div>
+
+  <!-- IMAGEGEN -->
+  <div id="imagegen" class="page" style="display:none">
+    <h2>Buat Gambar</h2>
+    <textarea id="imgPrompt" placeholder="Deskripsi gambar..."></textarea>
+    <button class="send" onclick="generateImage()">Generate</button>
+    <div id="imgOutput"></div>
+  </div>
+
 </div>
 
-<!-- FILE ANALYZER -->
-<div id="file" class="page">
-  <h2>Analisis File (PDF, TXT, JSON, DLL)</h2>
-
-  <input type="file" id="uploadFile">
-  <button onclick="analyzeFile()">Analisis</button>
-
-  <div id="fileResult"></div>
-</div>
-
-<!-- IMAGE GENERATOR -->
-<div id="imagegen" class="page">
-  <h2>Buat Gambar</h2>
-
-  <textarea id="imgPrompt" placeholder="Deskripsikan gambar..."></textarea>
-  <button onclick="generateImage()">Buat Gambar</button>
-
-  <div id="imgOutput" class="img-output"></div>
-</div>
 
 <script>
 // PAGE SWITCH
-function showPage(p) {
-  document.querySelectorAll(".page").forEach(e => e.classList.remove("active"));
-  document.querySelectorAll(".nav button").forEach(e => e.classList.remove("active"));
-
-  document.getElementById(p).classList.add("active");
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.style.display="none");
+  document.querySelectorAll('.menu button').forEach(b=>b.classList.remove("active"));
+  document.getElementById(id).style.display="block";
   event.target.classList.add("active");
 }
 
 // CHAT
-async function sendChat() {
+async function sendChat(){
+  const box = document.getElementById("chatBox");
   const prompt = document.getElementById("prompt").value;
   const model = document.getElementById("model").value;
-  const box = document.getElementById("chatBox");
 
   if (!prompt) return;
 
-  box.innerHTML += `<div class="bubble me"><b>Anda:</b> ${prompt}</div>`;
+  box.innerHTML += '<div class="bubble me"><b>Anda:</b> '+prompt+'</div>';
   document.getElementById("prompt").value = "";
 
-  const loader = document.createElement("div");
-  loader.className = "loader";
-  loader.innerText = "AI sedang memproses...";
-  box.appendChild(loader);
+  box.innerHTML += '<div id="typing" class="bubble ai"><div class="typing"></div></div>';
+  box.scrollTop = box.scrollHeight;
 
   const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, model }),
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({ prompt, model })
   });
 
-  loader.remove();
   const data = await res.json();
 
-  box.innerHTML += `<div class="bubble ai"><b>AI:</b> ${data.reply}</div>`;
+  document.getElementById("typing").remove();
+  box.innerHTML += '<div class="bubble ai"><b>AI:</b> '+data.reply+'</div>';
   box.scrollTop = box.scrollHeight;
 }
 
-// IMAGE ANALYSIS
-async function analyzeImage() {
-  const file = document.getElementById("visionFile").files[0];
-  if (!file) return alert("Pilih gambar dulu!");
+// VISION
+async function analyzeImage(){
+  const f = document.getElementById("visionFile").files[0];
+  if (!f) return alert("Pilih file");
 
-  const result = document.getElementById("visionResult");
-  result.innerHTML = `<div class="loader">Menganalisis gambar...</div>`;
+  const fd = new FormData();
+  fd.append("file", f);
 
-  const form = new FormData();
-  form.append("file", file);
+  const res = await fetch("/api/vision", { method:"POST", body:fd });
+  const j = await res.json();
 
-  const res = await fetch("/api/vision", {
-    method: "POST",
-    body: form,
-  });
-
-  const json = await res.json();
-  result.innerHTML = `<pre>${JSON.stringify(json, null, 2)}</pre>`;
+  document.getElementById("visionResult").innerHTML =
+    "<pre>"+JSON.stringify(j,null,2)+"</pre>";
 }
 
-// FILE ANALYSIS
-async function analyzeFile() {
-  const file = document.getElementById("uploadFile").files[0];
-  if (!file) return alert("Upload file dulu!");
+// FILE
+async function analyzeFile(){
+  const f = document.getElementById("uploadFile").files[0];
+  if (!f) return alert("Pilih file");
 
-  const result = document.getElementById("fileResult");
-  result.innerHTML = `<div class="loader">Menganalisis file...</div>`;
+  const fd = new FormData();
+  fd.append("file", f);
 
-  const form = new FormData();
-  form.append("file", file);
+  const res = await fetch("/api/analyze-file", { method:"POST", body:fd });
+  const j = await res.json();
 
-  const res = await fetch("/api/analyze-file", {
-    method: "POST",
-    body: form,
-  });
-
-  const json = await res.json();
-  result.innerHTML = `<pre>${json.reply}</pre>`;
+  document.getElementById("fileResult").innerHTML =
+    "<pre>"+j.reply+"</pre>";
 }
 
-// IMAGE GENERATOR
-async function generateImage() {
-  const prompt = document.getElementById("imgPrompt").value;
-  const out = document.getElementById("imgOutput");
-
-  out.innerHTML = `<div class="loader">Membuat gambar...</div>`;
+// IMAGE GENERATION
+async function generateImage(){
+  const p = document.getElementById("imgPrompt").value;
 
   const res = await fetch("/api/generate-image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ prompt:p })
   });
 
   const blob = await res.blob();
   const url = URL.createObjectURL(blob);
 
-  out.innerHTML = `<img src="${url}" width="400" style="border-radius:12px;">`;
+  document.getElementById("imgOutput").innerHTML =
+    '<img src="'+url+'" width="400">';
 }
 </script>
 
 </body>
 </html>
 `;
-}
