@@ -124,82 +124,113 @@ function json(obj, status = 200) {
   });
 }
 
-// ===================== HTML UI =======================
+// ===================== HTML UI (REWORK) =======================
 const htmlUI = `
 <!DOCTYPE html>
 <html>
 <head>
-<title>Wanz AI Chat</title>
+<title>Wanz AI</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #0d0f14;
-  margin: 0;
-  padding: 0;
-  color: white;
-}
-.container {
-  max-width: 600px;
-  margin: 40px auto;
-  background: #1a1d24;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 0 25px rgba(0,0,0,0.5);
-}
-input, select {
-  width: 100%; padding: 12px;
-  margin-top: 8px;
-  background: #11141a;
-  border: 1px solid #333;
-  border-radius: 8px;
-  color: white;
-}
-button {
-  margin-top: 12px;
-  width: 100%;
-  padding: 12px;
-  border: none;
-  background: #4c84ff;
-  color: white;
-  border-radius: 8px;
-  font-size: 15px;
-  cursor: pointer;
-}
-.chat-box {
-  background: #11141a;
-  padding: 15px;
-  border-radius: 10px;
-  height: 220px;
-  overflow-y: auto;
-  margin-top: 10px;
-  border: 1px solid #333;
-}
-.typing {
-  border-right: 2px solid white;
-  animation: cursor .6s infinite;
-}
-@keyframes cursor {
-  0% { border-color: white; }
-  50% { border-color: transparent; }
-  100% { border-color: white; }
-}
+  body {
+    font-family: Arial, sans-serif;
+    background: #ffffff;
+    margin: 0;
+    padding: 0;
+    color: #333;
+  }
+
+  .topbar {
+    background: #f5f5f5;
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    font-size: 20px;
+    font-weight: bold;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 25px auto;
+    padding: 20px;
+  }
+
+  .card {
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 10px;
+    background: white;
+    margin-bottom: 20px;
+  }
+
+  input, select, button, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-top: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 15px;
+  }
+
+  button {
+    background: #3478f6;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background: #2c67cf;
+  }
+
+  .chat-box {
+    border: 1px solid #ccc;
+    padding: 15px;
+    height: 250px;
+    overflow-y: auto;
+    border-radius: 10px;
+    background: #fafafa;
+  }
+
+  .typing {
+    border-right: 2px solid #333;
+    animation: cursor 0.6s infinite;
+  }
+
+  @keyframes cursor {
+    0% { border-color: #333; }
+    50% { border-color: transparent; }
+    100% { border-color: #333; }
+  }
 </style>
 </head>
 <body>
+
+<div class="topbar">Wanz AI Platform</div>
+
 <div class="container">
 
-<h2>🤖 Wanz AI Chat</h2>
-
-<div id="authBox">
-  <h3>Login</h3>
+<!-- LOGIN BOX -->
+<div id="authBox" class="card">
+  <h3>Login / Register</h3>
   <input id="email" placeholder="Email">
-  <input id="password" placeholder="Password">
+  <input id="password" placeholder="Password" type="password">
   <button onclick="login()">Login</button>
   <button onclick="register()">Register</button>
 </div>
 
-<div id="chatUI" style="display:none;">
-  <h3>Model AI</h3>
+<!-- DASHBOARD -->
+<div id="dashboard" class="card" style="display:none;">
+  <h3>Dashboard</h3>
+  <p><b>Email:</b> <span id="dbEmail"></span></p>
+  <p><b>API Key:</b> <span id="dbApiKey"></span></p>
+  <p><b>Limit Harian:</b> <span id="dbLimitMax"></span></p>
+  <p><b>Sudah Dipakai:</b> <span id="dbLimitUsed"></span></p>
+  <p><b>Reset Pada:</b> <span id="dbLimitReset"></span></p>
+</div>
+
+<!-- CHAT -->
+<div id="chatUI" class="card" style="display:none;">
+  <h3>Chat AI</h3>
+
   <select id="model">
     <option value="@cf/meta/llama-3.1-8b-instruct">Llama 3.1 - 8B</option>
     <option value="@cf/meta/llama-3.1-70b-instruct">Llama 3.1 - 70B</option>
@@ -209,6 +240,28 @@ button {
 
   <input id="msg" placeholder="Tulis pesan...">
   <button onclick="sendChat()">Kirim</button>
+</div>
+
+<!-- DOKUMENTASI -->
+<div id="docs" class="card" style="display:none;">
+  <h3>Dokumentasi API</h3>
+
+  <p><b>Endpoint:</b></p>
+  <pre>/api/chat</pre>
+
+  <p><b>Headers:</b></p>
+  <pre>x-api-key: API_KEY_KAMU</pre>
+
+  <p><b>Body:</b></p>
+  <pre>{
+  "message": "Halo",
+  "model": "@cf/meta/llama-3.1-8b-instruct"
+}</pre>
+
+  <p><b>Contoh Request cURL:</b></p>
+  <pre>curl -X POST https://domainkamu.workers.dev/api/chat \\
+  -H "x-api-key: API_KEY_KAMU" \\
+  -d '{"message":"Halo","model":"@cf/meta/llama-3.1-8b-instruct"}'</pre>
 </div>
 
 </div>
@@ -230,10 +283,10 @@ async function register() {
     method:"POST",
     body: JSON.stringify({email,password:pass})
   });
-  let data = await res.json();
 
+  let data = await res.json();
   if(data.error) return alert(data.error);
-  alert("Register sukses. API Key: "+data.apiKey);
+  alert("Registrasi berhasil!\nAPI Key kamu: " + data.apiKey);
 }
 
 async function login() {
@@ -244,13 +297,37 @@ async function login() {
     method:"POST",
     body: JSON.stringify({email,password:pass})
   });
-  let data = await res.json();
 
+  let data = await res.json();
   if(data.error) return alert(data.error);
 
   apiKey = data.apiKey;
-  document.getElementById("authBox").style.display="none";
-  document.getElementById("chatUI").style.display="block";
+
+  // sembunyikan login box
+  document.getElementById("authBox").style.display = "none";
+
+  // tampilkan dashboard
+  await loadDashboard();
+
+  document.getElementById("dashboard").style.display = "block";
+  document.getElementById("chatUI").style.display = "block";
+  document.getElementById("docs").style.display = "block";
+}
+
+async function loadDashboard() {
+  let res = await fetch("/api/user", {
+    headers: { "x-api-key": apiKey }
+  });
+
+  let data = await res.json();
+
+  document.getElementById("dbEmail").innerText = data.email;
+  document.getElementById("dbApiKey").innerText = data.apiKey;
+  document.getElementById("dbLimitMax").innerText = data.limit.max;
+  document.getElementById("dbLimitUsed").innerText = data.limit.used;
+
+  const d = new Date(data.limit.reset);
+  document.getElementById("dbLimitReset").innerText = d.toLocaleString();
 }
 
 async function sendChat() {
@@ -268,10 +345,13 @@ async function sendChat() {
     headers: { "x-api-key": apiKey },
     body: JSON.stringify({message: msg, model})
   });
+
   let data = await res.json();
 
   typing.remove();
   appendMessage(data.response, "AI");
+
+  loadDashboard(); // update limit
 }
 </script>
 
