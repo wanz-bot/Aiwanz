@@ -9,5 +9,5 @@ binding = "AI"
 # KV namespace otomatis
 [[kv_namespaces]]
 binding = "LIMIT_KV"
-id = "auto"
-preview_id = "auto"
+id = "eb56cc32a181415ab843488e6f547549"
+preview_id = "eb56cc32a181415ab843488e6f547549"
