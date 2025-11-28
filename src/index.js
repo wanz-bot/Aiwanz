@@ -14,16 +14,12 @@ export default {
 
       // Map model frontend → model Cloudflare AI
       const modelMap = {
-        gpt: "gpt-4o-mini",
+        gpt: "@cf/openai/gpt-oss-120b",
         llama: "@cf/meta/llama-3.1-8b-instruct",
-        claude: "claude-3.7-sonnet",
-        deepseek: "deepseek-r1",
-        wizard: "@cf/meta/wizardlm-7b",
-        starcoder: "@cf/starcoder-15b",
-        "gpt-3.5": "gpt-3.5-mini",
-        "mistral": "@cf/mistral/mistral-7b",
-        "codegen": "@cf/codegen/codegen-6b",
-        "falcon": "@cf/falcon/falcon-7b"
+        Gemini: "@cf/google/gemma-3-12b-it",
+        deepseek: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+        "gpt-3.5": "@cf/openai/gpt-oss-20b",
+        "mistral": "@cf/mistral/mistral-7b-instruct-v0.1"
       };
 
       const use = modelMap[model] || "gpt-4o-mini";
@@ -86,14 +82,10 @@ button.send-btn:hover{background:#0e8a6f;transform:scale(1.05)}
   <select id="model" class="model-select">
     <option value="gpt">GPT-4O Mini</option>
     <option value="llama">LLaMA 8B</option>
-    <option value="claude">Claude 3.7</option>
+    <option value="Gemini">Gemini 3.2</option>
     <option value="deepseek">DeepSeek R1</option>
-    <option value="wizard">WizardLM 7B</option>
-    <option value="starcoder">StarCoder 15B</option>
     <option value="gpt-3.5">GPT-3.5 Mini</option>
     <option value="mistral">Mistral 7B</option>
-    <option value="codegen">CodeGen 6B</option>
-    <option value="falcon">Falcon 7B</option>
   </select>
 </div>
 <div id="chatBox"></div>
