@@ -1,0 +1,13 @@
+name = "ai-chat"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+
+# AI binding otomatis
+[ai]
+binding = "AI"
+
+# KV namespace otomatis
+[[kv_namespaces]]
+binding = "LIMIT_KV"
+id = "auto"
+preview_id = "auto"
