@@ -14,11 +14,9 @@ export default {
 
       // Map model frontend → model Cloudflare AI
       const modelMap = {
-        gpt: "@cf/openai/gpt-oss-120b",
         llama: "@cf/meta/llama-3.1-8b-instruct",
         Gemini: "@cf/google/gemma-3-12b-it",
         deepseek: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
-        "gpt-3.5": "@cf/openai/gpt-oss-20b",
         "mistral": "@cf/mistral/mistral-7b-instruct-v0.1"
       };
 
@@ -80,11 +78,9 @@ button.send-btn:hover{background:#0e8a6f;transform:scale(1.05)}
 <div class="header">
   Wanz AI Chat
   <select id="model" class="model-select">
-    <option value="gpt">GPT-4O Mini</option>
     <option value="llama">LLaMA 8B</option>
     <option value="Gemini">Gemini 3.2</option>
     <option value="deepseek">DeepSeek R1</option>
-    <option value="gpt-3.5">GPT-3.5 Mini</option>
     <option value="mistral">Mistral 7B</option>
   </select>
 </div>
